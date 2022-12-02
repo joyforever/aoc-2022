@@ -82,11 +82,11 @@ pub fn part_two(input: &str) -> u32 {
     input
         .lines()
         .map(|line| {
-            let (shape, guide) = line.split_once(' ').unwrap();
-            let shape = Shape::parse(shape);
+            let (opponent, guide) = line.split_once(' ').unwrap();
+            let opponent = Shape::parse(opponent);
             let guide = Guide::parse(guide);
-            let choose = shape.choose(guide);
-            choose.score() + choose.compete(shape)
+            let choose = opponent.choose(guide);
+            choose.score() + choose.compete(opponent)
         })
         .sum()
 }
