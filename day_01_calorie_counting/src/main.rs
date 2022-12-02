@@ -1,5 +1,4 @@
-use day_01_calorie_counting::part_one;
-use day_01_calorie_counting::part_two;
+use day_01_calorie_counting::{part_one, part_two};
 
 const INPUT: &str = include_str!("../data/input.txt");
 
