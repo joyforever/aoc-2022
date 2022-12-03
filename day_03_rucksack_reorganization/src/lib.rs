@@ -32,29 +32,24 @@ pub fn part_one(input: &str) -> u32 {
         .sum()
 }
 
+fn count(m: &mut HashMap<char, u32>, s: &HashSet<char>) {
+    for c in s {
+        let e = m.entry(*c).or_default();
+        *e += 1;
+    }
+}
+
 pub fn part_two(input: &str) -> u32 {
     let lines: Vec<HashSet<char>> = input.lines().map(|line| str_to_set(line)).collect();
 
     let mut priorities = vec![];
 
     for i in (0..lines.len()).step_by(3) {
-        let r1 = &lines[i];
-        let r2 = &lines[i+1];
-        let r3 = &lines[i+2];
+        let mut m = HashMap::new();
 
-        let mut m: HashMap<char, u32> = HashMap::new();
-        for c in r1 {
-            let e = m.entry(*c).or_default();
-            *e += 1;
-        }
-        for c in r2 {
-            let e = m.entry(*c).or_default();
-            *e += 1;
-        }
-        for c in r3 {
-            let e = m.entry(*c).or_default();
-            *e += 1;
-        }
+        count(&mut m, &lines[i]);
+        count(&mut m, &lines[i+1]);
+        count(&mut m, &lines[i+2]);
 
         if let Some((c, _)) = m.iter().filter(|(_, count)| **count == 3).next() {
             priorities.push(char_to_priority(*c));
