@@ -1,10 +1,11 @@
 use std::collections::HashSet;
 
 fn str_to_set(s: &str) -> HashSet<char> {
-    s.chars().fold(HashSet::new(), |mut s, c| {
-        s.insert(c);
-        s
-    })
+    let mut set = HashSet::new();
+    for c in s.chars() {
+        set.insert(c);
+    }
+    set
 }
 
 fn char_to_priority(c: char) -> u32 {
@@ -29,7 +30,7 @@ pub fn part_one(input: &str) -> u32 {
 }
 
 pub fn part_two(input: &str) -> u32 {
-    let lines: Vec<_> = input.lines().map(|line| str_to_set(line)).collect();
+    let lines = input.lines().map(|line| str_to_set(line)).collect::<Vec<_>>();
 
     lines
         .chunks_exact(3)
