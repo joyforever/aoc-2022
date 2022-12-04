@@ -8,6 +8,11 @@ impl SectionRange {
     fn contains(&self, sr: SectionRange) -> bool {
         self.min <= sr.min && self.max >= sr.max
     }
+
+    fn overlap(&self, sr: SectionRange) -> bool {
+        (self.min >= sr.min && self.min <= sr.max) ||
+        (self.max >= sr.min && self.max <= sr.max)
+    }
 }
 
 impl From<&str> for SectionRange {
@@ -32,6 +37,18 @@ pub fn part_one(input: &str) -> usize {
         .count()
 }
 
+pub fn part_two(input: &str) -> usize {
+    input
+        .lines()
+        .filter(|line| {
+            let (sr1, sr2) = line.split_once(',').unwrap();
+            let sr1 = SectionRange::from(sr1);
+            let sr2 = SectionRange::from(sr2);
+            sr1.overlap(sr2) || sr2.overlap(sr1)
+        })
+        .count()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -41,5 +58,6 @@ mod tests {
     #[test]
     fn it_works() {
         assert_eq!(part_one(EXAMPLE), 2);
+        assert_eq!(part_two(EXAMPLE), 4);
     }
 }
