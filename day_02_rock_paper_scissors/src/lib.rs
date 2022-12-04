@@ -22,15 +22,13 @@ impl Shape {
 
     fn compete(&self, opponent: Shape) -> u32 {
         match (*self, opponent) {
-            (Shape::Rock, Shape::Rock) => 3,
             (Shape::Rock, Shape::Paper) => 0,
             (Shape::Rock, Shape::Scissors) => 6,
             (Shape::Paper, Shape::Rock) => 6,
-            (Shape::Paper, Shape::Paper) => 3,
             (Shape::Paper, Shape::Scissors) => 0,
             (Shape::Scissors, Shape::Rock) => 0,
             (Shape::Scissors, Shape::Paper) => 6,
-            (Shape::Scissors, Shape::Scissors) => 3,
+            (_, _) => 3,
         }
     }
 
