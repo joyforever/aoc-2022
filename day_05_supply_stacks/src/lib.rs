@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
-type StackCrates = HashMap<usize, Vec<char>>;
+type Stacks = HashMap<usize, Vec<char>>;
+type Moves = Vec<Move>;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 struct Move {
@@ -20,7 +21,7 @@ fn line_to_crates(line: &str) -> Vec<char> {
     v
 }
 
-fn insert_crate_to_stack(mut m: StackCrates, line: &str) -> StackCrates {
+fn insert_crate_to_stack(mut m: Stacks, line: &str) -> Stacks {
     let crates = line_to_crates(line);
     for (i, c) in crates.iter().enumerate() {
         let v = m.entry(i + 1).or_default();
@@ -44,7 +45,7 @@ fn parse_move(line: &str) -> Move {
     Move { count: vs[0], from: vs[1], to: vs[2], }
 }
 
-fn stack_top_string(stacks: &StackCrates) -> String {
+fn stack_top_string(stacks: &Stacks) -> String {
     let mut tops = Vec::new();
     for i in 1..=stacks.len() {
         let v = stacks.get(&i).unwrap();
@@ -53,7 +54,7 @@ fn stack_top_string(stacks: &StackCrates) -> String {
     String::from_iter(tops)
 }
 
-fn parse_input(input: &str) -> (StackCrates, Vec<Move>) {
+fn parse_input(input: &str) -> (Stacks, Moves) {
     let (stacks, moves) = input
         .split_once("\n\n")
         .unwrap();
