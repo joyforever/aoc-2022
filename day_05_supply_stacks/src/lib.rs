@@ -79,6 +79,43 @@ pub fn part_one(input: &str) -> String {
     String::from_iter(tops)
 }
 
+pub fn part_two(input: &str) -> String {
+    let (stacks, moves) = input
+        .split_once("\n\n")
+        .unwrap();
+
+    let mut stacks = stacks
+        .lines()
+        .rev()
+        .skip(1)
+        .fold(HashMap::new(), |m, line| {
+            insert_map(m, line)
+        });
+
+    let moves = moves
+        .lines()
+        .map(|line| to_move(line))
+        .collect::<Vec<_>>();
+
+    for m in moves.iter() {
+        let mut crates = Vec::new();
+        for _ in 0..m.count {
+            crates.push(stacks.get_mut(&m.from).unwrap().pop().unwrap());
+        }
+        for _ in 0..m.count {
+            stacks.get_mut(&m.to).unwrap().push(crates.pop().unwrap());
+        }
+    }
+
+    let mut tops = Vec::new();
+    for i in 1..=stacks.len() {
+        let v = stacks.get(&i).unwrap();
+        tops.push(*v.get(v.len() - 1).unwrap());
+    }
+    
+    String::from_iter(tops)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -88,5 +125,6 @@ mod tests {
     #[test]
     fn it_works() {
         assert_eq!(part_one(EXAMPLE), "CMZ".to_string());
+        assert_eq!(part_two(EXAMPLE), "MCD".to_string());
     }
 }
