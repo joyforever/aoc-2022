@@ -9,7 +9,6 @@ struct Move {
     to: usize,
 }
 
-
 fn line_to_crates(line: &str) -> Vec<char> {
     let mut v: Vec<char> = Vec::new();
     for i in (1..).step_by(4) {
@@ -21,7 +20,7 @@ fn line_to_crates(line: &str) -> Vec<char> {
     v
 }
 
-fn insert_map(mut m: StackCrates, line: &str) -> StackCrates {
+fn insert_crate_to_stack(mut m: StackCrates, line: &str) -> StackCrates {
     let crates = line_to_crates(line);
     for (i, c) in crates.iter().enumerate() {
         let v = m.entry(i + 1).or_default();
@@ -32,7 +31,7 @@ fn insert_map(mut m: StackCrates, line: &str) -> StackCrates {
     m
 }
 
-fn to_move(line: &str) -> Move {
+fn parse_move(line: &str) -> Move {
     let vs = line
         .split_ascii_whitespace()
         .filter_map(|s| {
@@ -45,23 +44,38 @@ fn to_move(line: &str) -> Move {
     Move { count: vs[0], from: vs[1], to: vs[2], }
 }
 
-pub fn part_one(input: &str) -> String {
+fn stack_top_string(stacks: &StackCrates) -> String {
+    let mut tops = Vec::new();
+    for i in 1..=stacks.len() {
+        let v = stacks.get(&i).unwrap();
+        tops.push(*v.get(v.len() - 1).unwrap());
+    }
+    String::from_iter(tops)
+}
+
+fn parse_input(input: &str) -> (StackCrates, Vec<Move>) {
     let (stacks, moves) = input
         .split_once("\n\n")
         .unwrap();
 
-    let mut stacks = stacks
+    let stacks = stacks
         .lines()
         .rev()
         .skip(1)
         .fold(HashMap::new(), |m, line| {
-            insert_map(m, line)
+            insert_crate_to_stack(m, line)
         });
 
     let moves = moves
         .lines()
-        .map(|line| to_move(line))
+        .map(|line| parse_move(line))
         .collect::<Vec<_>>();
+
+    (stacks, moves)
+}
+
+pub fn part_one(input: &str) -> String {
+    let (mut stacks, moves) = parse_input(input);
 
     for m in moves.iter() {
         for _ in 0..m.count {
@@ -70,32 +84,11 @@ pub fn part_one(input: &str) -> String {
         }
     }
 
-    let mut tops = Vec::new();
-    for i in 1..=stacks.len() {
-        let v = stacks.get(&i).unwrap();
-        tops.push(*v.get(v.len() - 1).unwrap());
-    }
-    
-    String::from_iter(tops)
+    stack_top_string(&stacks)
 }
 
 pub fn part_two(input: &str) -> String {
-    let (stacks, moves) = input
-        .split_once("\n\n")
-        .unwrap();
-
-    let mut stacks = stacks
-        .lines()
-        .rev()
-        .skip(1)
-        .fold(HashMap::new(), |m, line| {
-            insert_map(m, line)
-        });
-
-    let moves = moves
-        .lines()
-        .map(|line| to_move(line))
-        .collect::<Vec<_>>();
+    let (mut stacks, moves) = parse_input(input);
 
     for m in moves.iter() {
         let mut crates = Vec::new();
@@ -107,13 +100,7 @@ pub fn part_two(input: &str) -> String {
         }
     }
 
-    let mut tops = Vec::new();
-    for i in 1..=stacks.len() {
-        let v = stacks.get(&i).unwrap();
-        tops.push(*v.get(v.len() - 1).unwrap());
-    }
-    
-    String::from_iter(tops)
+    stack_top_string(&stacks)
 }
 
 #[cfg(test)]
