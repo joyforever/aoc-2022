@@ -49,7 +49,7 @@ fn stack_top_string(stacks: &Stacks) -> String {
     let mut tops = Vec::new();
     for i in 1..=stacks.len() {
         let v = stacks.get(&i).unwrap();
-        tops.push(*v.get(v.len() - 1).unwrap());
+        tops.push(*v.last().unwrap());
     }
     String::from_iter(tops)
 }
@@ -69,7 +69,7 @@ fn parse_input(input: &str) -> (Stacks, Moves) {
 
     let moves = moves
         .lines()
-        .map(|line| parse_move(line))
+        .map(parse_move)
         .collect::<Vec<_>>();
 
     (stacks, moves)
