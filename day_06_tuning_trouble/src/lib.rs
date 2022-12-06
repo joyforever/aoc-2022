@@ -5,10 +5,8 @@ fn detect<const N: usize>(input: &str) -> usize {
     let n = b.len() - N;
     for i in 0..=n {
         let s = (0..N)
-            .fold(HashSet::new(), |mut s, c| {
-                s.insert(b[i+c]);
-                s
-            });
+            .map(|index| b[i + index])
+            .collect::<HashSet<_>>();
         if s.len() == N {
             return i + N;
         }
