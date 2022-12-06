@@ -1,17 +1,16 @@
-use std::collections::HashSet;
+use std::collections::BTreeSet;
 
 fn detect<const N: usize>(input: &str) -> usize {
-    let b = input.as_bytes();
-    let n = b.len() - N;
-    for i in 0..=n {
-        let s = (0..N)
-            .map(|index| b[i + index])
-            .collect::<HashSet<_>>();
-        if s.len() == N {
-            return i + N;
-        }
-    }
-    0
+    let index = input
+        .as_bytes()
+        .windows(N)
+        .enumerate()
+        .map(|(index, digits)| {
+            (index, digits.iter().collect::<BTreeSet<_>>())
+        })
+        .find(|(_, set)| set.len() == N)
+        .unwrap();
+    index.0 + N
 }
 
 pub fn part_one(input: &str) -> usize {
