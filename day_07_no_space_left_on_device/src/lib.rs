@@ -1,55 +1,62 @@
-use std::collections::BTreeMap;
-
-fn to_string(v: &Vec<String>) -> String {
-    if v.is_empty() {
-        "".to_string()
-    } else if v.len() == 1 {
-        "/".to_string()
-    } else {
-        let mut s = String::from("/");
-        s.push_str(v[1..].join("/").as_str());
-        s
-    }
+#[derive(Debug)]
+enum Item {
+    Dir {
+        name: String,
+        items: Vec<Item>,
+    },
+    File {
+        name: String,
+        size: usize,
+    },
 }
 
-pub fn part_one(input: &str) -> usize {
-    let mut files_map = BTreeMap::new();
-    let mut curr_path = Vec::new();
-    let mut files = Vec::new();
+fn parse_item(mut index: usize, lines: &[&str], dir: &mut Item) -> usize {
+    loop {
+        if index >= lines.len() {
+            break;
+        }
 
-    for line in input.lines() {
-        if line.starts_with("$ cd") {
-            if !files.is_empty() {
-                files_map.insert(to_string(&curr_path), files.clone());
-                files.clear();
+        let line = lines[index];
+        if line.starts_with("$ ls") {
+            index += 1;
+        } else if line.starts_with("$ cd") {
+            let name = &line[5..];
+            if name == ".." {
+                index += 1;
+                return index;
             }
 
-            let path = &line[5..];
-            if path == ".." {
-                curr_path.pop();
-            } else {
-                curr_path.push(path.to_string());
+            let mut dir_item = Item::Dir {
+                name: name.to_string(),
+                items: vec![],
+            };
+            index = parse_item(index + 1, lines, &mut dir_item);
+            if let Item::Dir { items, name: _ } = dir {
+                items.push(dir_item);
             }
-        } else if line.starts_with("$ ls") {
-            files.clear();
         } else if line.starts_with("dir ") {
-            // skip
+            index += 1;
         } else {
             let (size, name) = line.split_once(' ').unwrap();
             let size = size.parse::<usize>().unwrap();
-            files.push((size, name.to_string()));
+            let name = name.to_string();
+            if let Item::Dir { items, name: _ } = dir {
+                items.push(Item::File { name, size });
+            }
+            index += 1;
         }
     }
+    index
+}
 
-    files_map
-        .iter()
-        .map(|(path, v)| {
-            let total = v.iter().fold(0, |total, (size, _)| total + *size);
-            println!("path={}, total={}", path, total);
-            total
-        })
-        .filter(|&size| size <= 100000)
-        .sum::<usize>()
+pub fn part_one(input: &str) -> usize {
+    let lines = input.lines().skip(1).collect::<Vec<_>>();
+    let mut root = Item::Dir { name: "/".to_string(), items: vec![], };
+    parse_item(1, &lines, &mut root);
+
+    dbg!(root);
+
+    0
 }
 
 #[cfg(test)]
