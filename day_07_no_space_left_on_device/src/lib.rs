@@ -111,9 +111,14 @@ pub fn part_two(input: &str) -> usize {
     let mut sizes = v.iter()
         .map(|s| s.1)
         .collect::<Vec<_>>();
-    sizes.sort_by(|a, b| b.cmp(a));
+    sizes.sort();
 
-    *sizes.iter().find(|s| **s < 30000000).unwrap()
+    println!("{:?}", sizes);
+
+    let left_size = sizes.last().unwrap();
+    println!("left spaces: {}", left_size);
+
+    *sizes.iter().find(|s| left_size - **s < 40000000).unwrap()
 }
 
 #[cfg(test)]
