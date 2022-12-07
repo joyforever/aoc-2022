@@ -77,10 +77,10 @@ fn find_directories(item: &Item) -> usize {
     count
 }
 
-fn collect_dir_sizes(item: &Item) -> Vec<(String, usize)> {
+fn collect_dir_sizes(item: &Item) -> Vec<usize> {
     let mut v = Vec::new();
-    if let Item::Dir { name, size, items, } = item {
-        v.push((name.clone(), *size));
+    if let Item::Dir { name: _, size, items, } = item {
+        v.push(*size);
         for i in items {
             if let Item::Dir { name: _, size: _, items: _ } = i {
                 let mut dirs = collect_dir_sizes(i);
@@ -91,33 +91,26 @@ fn collect_dir_sizes(item: &Item) -> Vec<(String, usize)> {
     v
 }
 
-pub fn part_one(input: &str) -> usize {
+fn parse_file_system(input: &str) -> Item {
     let lines = input.lines().skip(1).collect::<Vec<_>>();
 
     let mut root = Item::Dir { name: "/".to_string(), size: 0, items: vec![], };
     parse_item(1, &lines, &mut root);
 
+    root
+}
+
+pub fn part_one(input: &str) -> usize {
+    let root = parse_file_system(input);
     find_directories(&root)
 }
 
 pub fn part_two(input: &str) -> usize {
-    let lines = input.lines().skip(1).collect::<Vec<_>>();
+    let root = parse_file_system(input);
 
-    let mut root = Item::Dir { name: "/".to_string(), size: 0, items: vec![], };
-    parse_item(1, &lines, &mut root);
-
-    let v = collect_dir_sizes(&root);
-
-    let mut sizes = v.iter()
-        .map(|s| s.1)
-        .collect::<Vec<_>>();
+    let mut sizes = collect_dir_sizes(&root);
     sizes.sort();
-
-    println!("{:?}", sizes);
-
     let left_size = sizes.last().unwrap();
-    println!("left spaces: {}", left_size);
-
     *sizes.iter().find(|s| left_size - **s < 40000000).unwrap()
 }
 
