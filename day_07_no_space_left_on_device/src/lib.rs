@@ -77,6 +77,20 @@ fn find_directories(item: &Item) -> usize {
     count
 }
 
+fn collect_dir_sizes(item: &Item) -> Vec<(String, usize)> {
+    let mut v = Vec::new();
+    if let Item::Dir { name, size, items, } = item {
+        v.push((name.clone(), *size));
+        for i in items {
+            if let Item::Dir { name: _, size: _, items: _ } = i {
+                let mut dirs = collect_dir_sizes(i);
+                v.append(&mut dirs);
+            }
+        }
+    }
+    v
+}
+
 pub fn part_one(input: &str) -> usize {
     let lines = input.lines().skip(1).collect::<Vec<_>>();
 
@@ -84,6 +98,22 @@ pub fn part_one(input: &str) -> usize {
     parse_item(1, &lines, &mut root);
 
     find_directories(&root)
+}
+
+pub fn part_two(input: &str) -> usize {
+    let lines = input.lines().skip(1).collect::<Vec<_>>();
+
+    let mut root = Item::Dir { name: "/".to_string(), size: 0, items: vec![], };
+    parse_item(1, &lines, &mut root);
+
+    let v = collect_dir_sizes(&root);
+
+    let mut sizes = v.iter()
+        .map(|s| s.1)
+        .collect::<Vec<_>>();
+    sizes.sort_by(|a, b| b.cmp(a));
+
+    *sizes.iter().find(|s| **s < 30000000).unwrap()
 }
 
 #[cfg(test)]
@@ -95,5 +125,6 @@ mod tests {
     #[test]
     fn it_works() {
         assert_eq!(part_one(EXAMPLE), 95437);
+        assert_eq!(part_two(EXAMPLE), 24933642);
     }
 }
