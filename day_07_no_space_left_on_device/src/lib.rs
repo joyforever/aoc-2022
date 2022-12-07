@@ -16,13 +16,24 @@ enum Item {
 impl Item {
     fn size(&self) -> usize {
         match self {
-            Item::Dir { size, name: _, items: _, } => *size,
-            Item::File { size, name: _, } => *size,
+            Item::Dir { size, .. } => *size,
+            Item::File { size, .. } => *size,
         }
+    }
+
+    fn is_dir(&self) -> bool {
+        match self {
+            &Item::Dir { .. } => true,
+            _ => false,
+        }
+    }
+
+    fn default_dir() -> Item {
+        Item::Dir { name: "".to_string(), size: 0, items: vec![], }
     }
 }
 
-fn parse_item(mut index: usize, lines: &[&str], dir: &mut Item) -> usize {
+fn parse_item(mut index: usize, lines: &[&str], item: &mut Item) -> usize {
     loop {
         if index >= lines.len() {
             break;
@@ -38,13 +49,9 @@ fn parse_item(mut index: usize, lines: &[&str], dir: &mut Item) -> usize {
                 return index;
             }
 
-            let mut dir_item = Item::Dir {
-                name: name.to_string(),
-                size: 0,
-                items: vec![],
-            };
+            let mut dir_item = Item::default_dir();
             index = parse_item(index + 1, lines, &mut dir_item);
-            if let Item::Dir { name: _, size, items, } = dir {
+            if let Item::Dir { size, items, .. } = item {
                 *size += dir_item.size();
                 items.push(dir_item);
             }
@@ -54,7 +61,7 @@ fn parse_item(mut index: usize, lines: &[&str], dir: &mut Item) -> usize {
             let (file_size, file_name) = line.split_once(' ').unwrap();
             let file_size = file_size.parse::<usize>().unwrap();
             let file_name = file_name.to_string();
-            if let Item::Dir { name: _, size, items, } = dir {
+            if let Item::Dir { size, items, .. } = item {
                 *size += file_size;
                 items.push(Item::File { name: file_name, size: file_size, });
             }
@@ -64,25 +71,12 @@ fn parse_item(mut index: usize, lines: &[&str], dir: &mut Item) -> usize {
     index
 }
 
-fn find_directories(item: &Item) -> usize {
-    let mut count = 0;
-    if let Item::Dir { name: _, size, items } = item {
-        if *size <= 100000 {
-            count += *size;
-        }
-        for sub_item in items {
-            count += find_directories(sub_item);
-        }
-    }
-    count
-}
-
 fn collect_dir_sizes(item: &Item) -> Vec<usize> {
     let mut v = Vec::new();
-    if let Item::Dir { name: _, size, items, } = item {
+    if let Item::Dir { size, items, .. } = item {
         v.push(*size);
         for i in items {
-            if let Item::Dir { name: _, size: _, items: _ } = i {
+            if i.is_dir() {
                 let mut dirs = collect_dir_sizes(i);
                 v.append(&mut dirs);
             }
@@ -101,17 +95,26 @@ fn parse_file_system(input: &str) -> Item {
 }
 
 pub fn part_one(input: &str) -> usize {
-    let root = parse_file_system(input);
-    find_directories(&root)
+    let item = parse_file_system(input);
+
+    let sizes = collect_dir_sizes(&item);
+    sizes
+        .iter()
+        .filter(|&&size| size <= 100000)
+        .sum::<usize>()
 }
 
 pub fn part_two(input: &str) -> usize {
-    let root = parse_file_system(input);
+    let item = parse_file_system(input);
 
-    let mut sizes = collect_dir_sizes(&root);
+    let mut sizes = collect_dir_sizes(&item);
     sizes.sort();
-    let left_size = sizes.last().unwrap();
-    *sizes.iter().find(|s| left_size - **s < 40000000).unwrap()
+    let disk_space = sizes.last().unwrap();
+    let size = sizes
+        .iter()
+        .find(|&&size| disk_space - size < 40000000)
+        .unwrap();
+    *size
 }
 
 #[cfg(test)]
