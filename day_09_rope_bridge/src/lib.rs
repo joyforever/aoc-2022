@@ -63,21 +63,13 @@ fn move_tail(head: Position, tail: &mut Position, direction: Direction) {
         return
     }
 
+    tail.step(direction);
+
     match direction {
-        Direction::Left  => {
-            tail.x -= 1;
+        Direction::Left | Direction::Right => {
             tail.y = head.y;
         },
-        Direction::Right => {
-            tail.x += 1;
-            tail.y = head.y;
-        },
-        Direction::Up    => {
-            tail.y += 1;
-            tail.x = head.x;
-        },
-        Direction::Down  => {
-            tail.y -= 1;
+        Direction::Up | Direction::Down => {
             tail.x = head.x;
         },
     }
@@ -97,7 +89,6 @@ pub fn part_one(input: &str) -> usize {
             head.step(motion.direction);
             move_tail(head, &mut tail, motion.direction);
             map.insert(tail);
-            //println!("{:?} - {:?}", head, tail);
         });
     }
 
