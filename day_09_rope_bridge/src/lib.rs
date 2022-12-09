@@ -58,21 +58,31 @@ fn parse_motions(input: &str) -> Vec<Motion> {
         .collect()
 }
 
-fn move_tail(head: Position, tail: &mut Position, direction: Direction) {
+fn move_tail(head: Position, tail: &mut Position, direction: Direction) -> Position {
     if head.x.abs_diff(tail.x) <= 1 && head.y.abs_diff(tail.y) <= 1 {
-        return
+        return *tail;
     }
 
     tail.step(direction);
 
     match direction {
         Direction::Left | Direction::Right => {
-            tail.y = head.y;
+            if tail.y > head.y && tail.y - head.y >= 1 {
+                tail.y -= 1;
+            } else if tail.y < head.y && head.y - tail.y >= 1 {
+                tail.y += 1;
+            }
         },
         Direction::Up | Direction::Down => {
-            tail.x = head.x;
+            if tail.x > head.x && tail.x - head.x >= 1 {
+                tail.x -= 1;
+            } else if tail.x < head.x && head.x - tail.x >= 1 {
+                tail.x += 1;
+            }
         },
     }
+
+    *tail
 }
 
 pub fn part_one(input: &str) -> usize {
@@ -87,12 +97,36 @@ pub fn part_one(input: &str) -> usize {
     for motion in &motions {
         (0..motion.steps).for_each(|_| {
             head.step(motion.direction);
-            move_tail(head, &mut tail, motion.direction);
-            map.insert(tail);
+            map.insert(move_tail(head, &mut tail, motion.direction));
+            //println!("{head:?} {tail:?}");
         });
     }
 
     map.len()
+}
+
+pub fn part_two(input: &str) -> usize {
+    let motions = parse_motions(input);
+
+    let mut knots = Vec::new();
+    for _ in 0..10 {
+        let pos = Position { x: 0, y: 0, };
+        let mut set = HashSet::new();
+        set.insert(pos);
+        knots.push((pos, set));
+    }
+
+    for motion in &motions {
+        (0..motion.steps).for_each(|_| {
+            knots[0].0.step(motion.direction);
+            for i in 1..=9 {
+                let tail = move_tail(knots[i-1].0, &mut knots[i].0, motion.direction);
+                knots[i].1.insert(tail);
+            }
+        });
+    }
+
+    knots[9].1.len()
 }
 
 #[cfg(test)]
@@ -102,7 +136,12 @@ mod tests {
     const EXAMPLE: &str = include_str!("../data/example.txt");
 
     #[test]
-    fn it_works() {
+    fn part_one_works() {
         assert_eq!(part_one(EXAMPLE), 13);
+    }
+
+    #[test]
+    fn part_two_works() {
+        assert_eq!(part_two(EXAMPLE), 1);
     }
 }
