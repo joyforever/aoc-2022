@@ -2,19 +2,16 @@ use std::collections::HashSet;
 
 #[derive(Debug, Clone, Copy)]
 enum Direction {
-    Left,
-    Right,
-    Up,
-    Down,
+    L, R, U, D,
 }
 
 impl From<&str> for Direction {
     fn from(s: &str) -> Self {
         match s {
-            "L" => Direction::Left,
-            "R" => Direction::Right,
-            "U" => Direction::Up,
-            _ => Direction::Down,
+            "L" => Direction::L,
+            "R" => Direction::R,
+            "U" => Direction::U,
+            _ => Direction::D,
         }
     }
 }
@@ -40,17 +37,6 @@ struct Position {
     y: i32,
 }
 
-impl Position {
-    fn step(&mut self, direction: Direction) {
-        match direction {
-            Direction::Left  => self.x -= 1,
-            Direction::Right => self.x += 1,
-            Direction::Up    => self.y += 1,
-            Direction::Down  => self.y -= 1,
-        }
-    }
-}
-
 fn parse_motions(input: &str) -> Vec<Motion> {
     input
         .lines()
@@ -58,92 +44,140 @@ fn parse_motions(input: &str) -> Vec<Motion> {
         .collect()
 }
 
-fn move_tail(head: Position, tail: &mut Position) {
-    if head.x.abs_diff(tail.x) <= 1 && head.y.abs_diff(tail.y) <= 1 {
-        return;
-    }
+struct Knot {
+    current: Position,
+    visited: HashSet<Position>,
+}
 
-    if tail.x > head.x && tail.x - head.x >= 1 {
-        tail.x -= 1;
-    } else if tail.x < head.x && head.x - tail.x >= 1 {
-        tail.x += 1;
-    }
-
-    if tail.y > head.y && tail.y - head.y >= 1 {
-        tail.y -= 1;
-    } else if tail.y < head.y && head.y - tail.y >= 1 {
-        tail.y += 1;
+impl Default for Knot {
+    fn default() -> Self {
+        let current = Position::default();
+        let mut visited = HashSet::new();
+        visited.insert(current);
+        Self { current, visited }
     }
 }
 
-pub fn part_one(input: &str) -> usize {
-    let motions = parse_motions(input);
-
-    let mut head = Position { x: 0, y: 0, };
-    let mut tail = Position { x: 0, y: 0, };
-
-    let mut map = HashSet::new();
-    map.insert(tail); // starting position
-
-    for motion in &motions {
-        (0..motion.steps).for_each(|_| {
-            head.step(motion.direction);
-            move_tail(head, &mut tail);
-            map.insert(tail);
-            //println!("{head:?} {tail:?}");
-        });
+impl Knot {
+    fn forward(&mut self, direction: Direction) -> Position {
+        match direction {
+            Direction::L => self.current.x -= 1,
+            Direction::R => self.current.x += 1,
+            Direction::U => self.current.y += 1,
+            Direction::D => self.current.y -= 1,
+        }
+        self.current
     }
 
-    map.len()
+    fn follow(&mut self, head: Position) {
+        if head.x.abs_diff(self.current.x) <= 1 && head.y.abs_diff(self.current.y) <= 1 {
+            return;
+        }
+    
+        if self.current.x > head.x && self.current.x - head.x >= 1 {
+            self.current.x -= 1;
+        } else if self.current.x < head.x && head.x - self.current.x >= 1 {
+            self.current.x += 1;
+        }
+    
+        if self.current.y > head.y && self.current.y - head.y >= 1 {
+            self.current.y -= 1;
+        } else if self.current.y < head.y && head.y - self.current.y >= 1 {
+            self.current.y += 1;
+        }
+
+        self.visited.insert(self.current);
+    }
 }
 
-pub fn part_two(input: &str) -> usize {
+struct Rope {
+    knots: Vec<Knot>,
+    min_x: i32,
+    max_x: i32,
+    min_y: i32,
+    max_y: i32,
+}
+
+impl Rope {
+    fn new(count: usize) -> Self {
+        let mut knots = vec![];
+        for _ in 0..count {
+            knots.push(Knot::default());
+        }
+        Self {
+            knots,
+            min_x: 0,
+            max_x: 0,
+            min_y: 0,
+            max_y: 0,
+        }
+    }
+
+    fn step(&mut self, direction: Direction) {
+        let pos = self.knots[0].forward(direction);
+        self.min_x = self.min_x.min(pos.x);
+        self.max_x = self.max_x.max(pos.x);
+        self.min_y = self.min_y.min(pos.y);
+        self.max_y = self.max_y.max(pos.y);
+
+        for i in 1..self.knots.len() {
+            let pos = self.knots[i-1].current;
+            self.knots[i].follow(pos);
+        }
+    }
+
+    fn visited_positions(&self, tail_index: usize) -> usize {
+        self.knots[tail_index].visited.len()
+    }
+
+    #[allow(dead_code)]
+    fn print_positions(&self) {
+        for y in (self.min_y..=self.max_y).rev() {
+            for x in self.min_x..=self.max_x {
+                let mut found = false;
+                for (i, k) in self.knots.iter().enumerate() {
+                    if k.current.x == x && k.current.y == y {
+                        if i == 0 {
+                            print!("H");
+                        } else {
+                            print!("{i}");
+                        }
+                        found = true;
+                        break;
+                    }
+                }
+                if !found {
+                    print!(".");
+                }
+            }
+            println!();
+        }
+        println!();
+    }
+}
+
+fn tail_visited_positions<const N: usize>(input: &str) -> usize {
     let motions = parse_motions(input);
 
-    let mut knots = Vec::new();
-    for _ in 0..10 {
-        let pos = Position { x: 0, y: 0, };
-        let mut set = HashSet::new();
-        set.insert(pos);
-        knots.push((pos, set));
-    }
+    let mut rope = Rope::new(N);
 
     for motion in motions.iter() {
         //println!("== {:?} {} ==", motion.direction, motion.steps);
-
         (0..motion.steps).for_each(|_| {
-            knots[0].0.step(motion.direction);
-            for i in 1..=9 {
-                move_tail(knots[i-1].0, &mut knots[i].0);
-                let tail = knots[i].0;
-                knots[i].1.insert(tail);
-            }
+            rope.step(motion.direction);
         });
-
-        // for y in (-10..10).rev() {
-        //     for x in -10..10 {
-        //         let mut found = false;
-        //         for (i, k) in knots.iter().enumerate() {
-        //             if k.0.x == x && k.0.y == y {
-        //                 if i == 0 {
-        //                     print!("H");
-        //                 } else {
-        //                     print!("{i}");
-        //                 }
-        //                 found = true;
-        //                 break;
-        //             }
-        //         }
-        //         if !found {
-        //             print!(".");
-        //         }
-        //     }
-        //     println!();
-        // }
-        // println!();
+        //rope.print_positions();
     }
 
-    knots[9].1.len()
+    rope.visited_positions(N-1)
+}
+
+pub fn part_one(input: &str) -> usize {
+    tail_visited_positions::<2>(input)
+}
+
+pub fn part_two(input: &str) -> usize {
+    tail_visited_positions::<10>(input)
 }
 
 #[cfg(test)]
