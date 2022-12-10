@@ -1,51 +1,10 @@
-#[derive(Debug)]
-enum Instruction {
-    Addx(i32),
-    Noop,
-}
+mod instruction;
+mod cpu;
+mod crt;
 
-impl From<&str> for Instruction {
-    fn from(s: &str) -> Self {
-        if s.starts_with("noop") {
-            Instruction::Noop
-        } else {
-            let (_, value) = s.split_once(' ').unwrap();
-            let value = value.parse::<i32>().unwrap();
-            Instruction::Addx(value)
-        }
-    }
-}
-
-struct CPU {
-    register_x: i32,
-    cycles: i32,
-    signals: Vec<i32>,
-}
-
-impl Default for CPU {
-    fn default() -> Self {
-        Self { register_x: 1, cycles: 0, signals: vec![0], }
-    }
-}
-
-impl CPU {
-    fn execute(&mut self, instruction: &Instruction) {
-        self.cycles += 1;
-        self.signals.push(self.cycles * self.register_x);
-        //self.print_signal_strengths();
-
-        if let &Instruction::Addx(value) = instruction {
-            self.register_x += value;
-        }
-    }
-
-    #[allow(dead_code)]
-    fn print_signal_strengths(&self) {
-        if self.cycles >= 20 && (self.cycles - 20) % 40 == 0 {
-            println!("cycles:{}, x:{}, signal:{}", self.cycles, self.register_x, self.cycles * self.register_x);
-        }
-    }
-}
+use crate::instruction::Instruction;
+use crate::cpu::CPU;
+use crate::crt::CRT;
 
 pub fn part_one(input: &str) -> i32 {
     let insructions = input
@@ -65,8 +24,26 @@ pub fn part_one(input: &str) -> i32 {
     let cycles = vec![20, 60, 100, 140, 180, 220];
     cycles
         .iter()
-        .map(|&index| cpu.signals[index])
+        .map(|&index| cpu.get_signals()[index])
         .sum()
+}
+
+pub fn part_two(input: &str) {
+    let insructions = input
+        .lines()
+        .map(Instruction::from)
+        .flat_map(|i| match i {
+            Instruction::Addx(value) => vec![Instruction::Noop, Instruction::Addx(value)],
+            _ => vec![Instruction::Noop],
+        })
+        .collect::<Vec<_>>();
+
+    let mut crt = CRT::default();
+    for ins in &insructions {
+        crt.draw(ins);
+    }
+
+    crt.print();
 }
 
 #[cfg(test)]
@@ -78,5 +55,10 @@ mod tests {
     #[test]
     fn part_one_works() {
         assert_eq!(part_one(EXAMPLE), 13140);
+    }
+
+    #[test]
+    fn part_two_works() {
+        part_two(EXAMPLE);
     }
 }
