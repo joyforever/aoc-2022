@@ -35,10 +35,6 @@ impl CPU {
         //self.print_signal_strengths();
 
         if let &Instruction::Addx(value) = instruction {
-            self.cycles += 1;
-            self.signals.push(self.cycles * self.register_x);
-            //self.print_signal_strengths();
-
             self.register_x += value;
         }
     }
@@ -55,6 +51,10 @@ pub fn part_one(input: &str) -> i32 {
     let insructions = input
         .lines()
         .map(Instruction::from)
+        .flat_map(|i| match i {
+            Instruction::Addx(value) => vec![Instruction::Noop, Instruction::Addx(value)],
+            _ => vec![Instruction::Noop],
+        })
         .collect::<Vec<_>>();
 
     let mut cpu = CPU::default();
