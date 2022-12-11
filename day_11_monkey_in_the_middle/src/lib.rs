@@ -1,4 +1,6 @@
-#[derive(Debug)]
+use std::collections::BTreeMap;
+
+#[derive(Debug, Clone, Copy)]
 enum Operand {
     Old,
     Num(usize),
@@ -14,7 +16,7 @@ impl From<&str> for Operand {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 enum Operator {
     Add, Mul,
 }
@@ -29,7 +31,7 @@ impl From<&str> for Operator {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 struct Test {
     divisible_by: usize,
     throw_if_true: usize,
@@ -88,14 +90,76 @@ impl From<&str> for Monkey {
     }
 }
 
-pub fn part_one(input: &str) -> u32 {
-    let monkeys = input.split("\n\n")
+fn calculate_worry_level(op: &(Operand, Operator, Operand), old: usize) -> usize {
+    let x = match op.0 {
+        Operand::Old => old,
+        Operand::Num(value) => value,
+    };
+    let y = match op.2 {
+        Operand::Old => old,
+        Operand::Num(value) => value,
+    };
+    let level = match op.1 {
+        Operator::Add => x + y,
+        Operator::Mul => x * y,
+    };
+    level / 3
+}
+
+pub fn part_one(input: &str) -> usize {
+    let mut monkeys = input.split("\n\n")
         .map(Monkey::from)
         .collect::<Vec<_>>();
+    
+    let mut inspect_count = BTreeMap::new();
+    
+    for round in 1..=20 {
+        for i in 0..monkeys.len() {
+            let items = monkeys[i].starting_items.clone();
+            monkeys[i].starting_items.clear();
+            let operation = monkeys[i].operation;
+            let test = monkeys[i].test;
 
-    dbg!(monkeys);
+            let count = inspect_count.entry(i).or_insert(0usize);
+            *count += items.len();
+    
+            for item in items {
+                let worry_level = calculate_worry_level(&operation, item);
+                let monkey_index = if worry_level % test.divisible_by == 0 {
+                    test.throw_if_true
+                } else {
+                    test.throw_if_false
+                };
+                monkeys[monkey_index].starting_items.push(worry_level);
+            }
+        }
 
-    0
+        println!("After round {round}, the monkeys are holding items with these worry levels:");
+        for (index, monkey) in monkeys.iter().enumerate() {
+            print!("Monkey {index}:");
+            for (index, item) in monkey.starting_items.iter().enumerate() {
+                if index != 0 {
+                    print!(" {item}");
+                } else {
+                    print!(", {item}");
+                }
+            }
+            println!();
+        }
+        println!();
+    }
+
+    for (index, count) in inspect_count.iter() {
+        println!("Monkey {index} inspected items {count} times");
+    }
+
+    let mut counts = inspect_count
+        .iter()
+        .map(|(_, &count)| count)
+        .collect::<Vec<_>>();
+    counts.sort();
+    println!("{counts:?}");
+    counts.iter().rev().take(2).product()
 }
 
 #[cfg(test)]
