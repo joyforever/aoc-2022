@@ -113,7 +113,7 @@ pub fn part_one(input: &str) -> usize {
     
     let mut inspect_count = BTreeMap::new();
     
-    for round in 1..=20 {
+    for _round in 1..=20 {
         for i in 0..monkeys.len() {
             let items = monkeys[i].starting_items.clone();
             monkeys[i].starting_items.clear();
@@ -134,31 +134,30 @@ pub fn part_one(input: &str) -> usize {
             }
         }
 
-        println!("After round {round}, the monkeys are holding items with these worry levels:");
-        for (index, monkey) in monkeys.iter().enumerate() {
-            print!("Monkey {index}:");
-            for (index, item) in monkey.starting_items.iter().enumerate() {
-                if index != 0 {
-                    print!(" {item}");
-                } else {
-                    print!(", {item}");
-                }
-            }
-            println!();
-        }
-        println!();
+        // println!("After round {round}, the monkeys are holding items with these worry levels:");
+        // for (index, monkey) in monkeys.iter().enumerate() {
+        //     print!("Monkey {index}:");
+        //     for (index, item) in monkey.starting_items.iter().enumerate() {
+        //         if index != 0 {
+        //             print!(" {item}");
+        //         } else {
+        //             print!(", {item}");
+        //         }
+        //     }
+        //     println!();
+        // }
+        // println!();
     }
 
-    for (index, count) in inspect_count.iter() {
-        println!("Monkey {index} inspected items {count} times");
-    }
+    // for (index, count) in inspect_count.iter() {
+    //     println!("Monkey {index} inspected items {count} times.");
+    // }
 
     let mut counts = inspect_count
         .iter()
         .map(|(_, &count)| count)
         .collect::<Vec<_>>();
     counts.sort();
-    println!("{counts:?}");
     counts.iter().rev().take(2).product()
 }
 
