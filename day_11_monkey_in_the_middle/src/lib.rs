@@ -34,7 +34,7 @@ impl From<&str> for Operator {
 
 #[derive(Debug, Clone, Copy)]
 struct Test {
-    divisible_by: usize,
+    divisor: usize,
     throw_if_true: usize,
     throw_if_false: usize,
 }
@@ -86,7 +86,7 @@ impl From<&str> for Monkey {
         let throw_if_true = parse_last_number(lines.next().unwrap());
         let throw_if_false = parse_last_number(lines.next().unwrap());
         let test = Test {
-            divisible_by,
+            divisor: divisible_by,
             throw_if_true,
             throw_if_false,
         };
@@ -108,11 +108,10 @@ fn calculate_worry_level(op: &(Operand, Operator, Operand), old: usize) -> usize
         Operand::Old => old,
         Operand::Num(value) => value,
     };
-    let level = match op.1 {
+    match op.1 {
         Operator::Add => x + y,
         Operator::Mul => x * y,
-    };
-    level / 3
+    }
 }
 
 pub fn part_one(input: &str) -> usize {
@@ -122,8 +121,7 @@ pub fn part_one(input: &str) -> usize {
 
     for _round in 1..=20 {
         for i in 0..monkeys.len() {
-            let items = monkeys[i].starting_items.clone();
-            monkeys[i].starting_items.clear();
+            let items = std::mem::take(&mut monkeys[i].starting_items);
             let operation = monkeys[i].operation;
             let test = monkeys[i].test;
 
@@ -131,8 +129,8 @@ pub fn part_one(input: &str) -> usize {
             *count += items.len();
 
             for item in items {
-                let worry_level = calculate_worry_level(&operation, item);
-                let monkey_index = if worry_level % test.divisible_by == 0 {
+                let worry_level = calculate_worry_level(&operation, item) / 3;
+                let monkey_index = if worry_level % test.divisor == 0 {
                     test.throw_if_true
                 } else {
                     test.throw_if_false
@@ -169,7 +167,39 @@ pub fn part_one(input: &str) -> usize {
 }
 
 pub fn part_two(input: &str) -> usize {
-    0
+    let mut monkeys = input.split("\n\n").map(Monkey::from).collect::<Vec<_>>();
+
+    let mut inspect_count = BTreeMap::new();
+
+    let modulo = monkeys.iter().map(|m| m.test.divisor).product::<usize>();
+
+    for _round in 1..=10000 {
+        for i in 0..monkeys.len() {
+            let items = std::mem::take(&mut monkeys[i].starting_items);
+            let operation = monkeys[i].operation;
+            let test = monkeys[i].test;
+
+            let count = inspect_count.entry(i).or_insert(0usize);
+            *count += items.len();
+
+            for item in items {
+                let worry_level = calculate_worry_level(&operation, item) % modulo;
+                let monkey_index = if worry_level % test.divisor == 0 {
+                    test.throw_if_true
+                } else {
+                    test.throw_if_false
+                };
+                monkeys[monkey_index].starting_items.push(worry_level);
+            }
+        }
+    }
+
+    let mut counts = inspect_count
+        .iter()
+        .map(|(_, &count)| count)
+        .collect::<Vec<_>>();
+    counts.sort();
+    counts.iter().rev().take(2).product()
 }
 
 #[cfg(test)]
