@@ -18,7 +18,8 @@ impl From<&str> for Operand {
 
 #[derive(Debug, Clone, Copy)]
 enum Operator {
-    Add, Mul,
+    Add,
+    Mul,
 }
 
 impl From<&str> for Operator {
@@ -48,24 +49,24 @@ struct Monkey {
 impl Monkey {
     fn parse_starting_items(line: &str) -> Vec<usize> {
         let (_, starting_items) = line.split_once(':').unwrap();
-        starting_items.split(',')
+        starting_items
+            .split(',')
             .map(|item| item.trim().parse::<usize>().unwrap())
             .collect::<Vec<_>>()
     }
 
     fn parse_operation(line: &str) -> (Operand, Operator, Operand) {
-        let operation = line
-            .split(' ')
-            .rev()
-            .take(3)
-            .collect::<Vec<_>>();
-        (Operand::from(operation[2]), Operator::from(operation[1]), Operand::from(operation[0]))
+        let operation = line.split(' ').rev().take(3).collect::<Vec<_>>();
+        (
+            Operand::from(operation[2]),
+            Operator::from(operation[1]),
+            Operand::from(operation[0]),
+        )
     }
 }
 
 fn parse_last_number(s: &str) -> usize {
-    s
-        .split(' ')
+    s.split(' ')
         .rev()
         .take(1)
         .next()
@@ -77,16 +78,24 @@ fn parse_last_number(s: &str) -> usize {
 impl From<&str> for Monkey {
     fn from(s: &str) -> Self {
         let mut lines = s.lines().skip(1);
-        
+
         let starting_items = Monkey::parse_starting_items(lines.next().unwrap());
         let operation = Monkey::parse_operation(lines.next().unwrap());
 
         let divisible_by = parse_last_number(lines.next().unwrap());
         let throw_if_true = parse_last_number(lines.next().unwrap());
         let throw_if_false = parse_last_number(lines.next().unwrap());
-        let test = Test { divisible_by, throw_if_true, throw_if_false, };
+        let test = Test {
+            divisible_by,
+            throw_if_true,
+            throw_if_false,
+        };
 
-        Self { starting_items, operation, test, }
+        Self {
+            starting_items,
+            operation,
+            test,
+        }
     }
 }
 
@@ -107,12 +116,10 @@ fn calculate_worry_level(op: &(Operand, Operator, Operand), old: usize) -> usize
 }
 
 pub fn part_one(input: &str) -> usize {
-    let mut monkeys = input.split("\n\n")
-        .map(Monkey::from)
-        .collect::<Vec<_>>();
-    
+    let mut monkeys = input.split("\n\n").map(Monkey::from).collect::<Vec<_>>();
+
     let mut inspect_count = BTreeMap::new();
-    
+
     for _round in 1..=20 {
         for i in 0..monkeys.len() {
             let items = monkeys[i].starting_items.clone();
@@ -122,7 +129,7 @@ pub fn part_one(input: &str) -> usize {
 
             let count = inspect_count.entry(i).or_insert(0usize);
             *count += items.len();
-    
+
             for item in items {
                 let worry_level = calculate_worry_level(&operation, item);
                 let monkey_index = if worry_level % test.divisible_by == 0 {
@@ -161,6 +168,10 @@ pub fn part_one(input: &str) -> usize {
     counts.iter().rev().take(2).product()
 }
 
+pub fn part_two(input: &str) -> usize {
+    0
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -173,5 +184,7 @@ mod tests {
     }
 
     #[test]
-    fn part_two_works() {}
+    fn part_two_works() {
+        assert_eq!(part_two(EXAMPLE), 2713310158);
+    }
 }
