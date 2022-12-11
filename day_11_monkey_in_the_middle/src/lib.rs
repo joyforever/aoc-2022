@@ -41,7 +41,7 @@ struct Test {
 
 #[derive(Debug)]
 struct Monkey {
-    starting_items: Vec<usize>,
+    items: Vec<usize>,
     operation: (Operand, Operator, Operand),
     test: Test,
 }
@@ -92,7 +92,7 @@ impl From<&str> for Monkey {
         };
 
         Self {
-            starting_items,
+            items: starting_items,
             operation,
             test,
         }
@@ -114,14 +114,12 @@ fn calculate_worry_level(op: &(Operand, Operator, Operand), old: usize) -> usize
     }
 }
 
-pub fn part_one(input: &str) -> usize {
-    let mut monkeys = input.split("\n\n").map(Monkey::from).collect::<Vec<_>>();
-
+fn solve(monkeys: &mut Vec<Monkey>, round: u32, f: &dyn Fn(usize) -> usize) -> usize {
     let mut inspect_count = BTreeMap::new();
 
-    for _round in 1..=20 {
+    for _r in 1..=round {
         for i in 0..monkeys.len() {
-            let items = std::mem::take(&mut monkeys[i].starting_items);
+            let items = std::mem::take(&mut monkeys[i].items);
             let operation = monkeys[i].operation;
             let test = monkeys[i].test;
 
@@ -129,13 +127,13 @@ pub fn part_one(input: &str) -> usize {
             *count += items.len();
 
             for item in items {
-                let worry_level = calculate_worry_level(&operation, item) / 3;
+                let worry_level = f(calculate_worry_level(&operation, item));
                 let monkey_index = if worry_level % test.divisor == 0 {
                     test.throw_if_true
                 } else {
                     test.throw_if_false
                 };
-                monkeys[monkey_index].starting_items.push(worry_level);
+                monkeys[monkey_index].items.push(worry_level);
             }
         }
 
@@ -166,40 +164,15 @@ pub fn part_one(input: &str) -> usize {
     counts.iter().rev().take(2).product()
 }
 
+pub fn part_one(input: &str) -> usize {
+    let mut monkeys = input.split("\n\n").map(Monkey::from).collect::<Vec<_>>();
+    solve(&mut monkeys, 20, &|v| v / 3)
+}
+
 pub fn part_two(input: &str) -> usize {
     let mut monkeys = input.split("\n\n").map(Monkey::from).collect::<Vec<_>>();
-
-    let mut inspect_count = BTreeMap::new();
-
     let modulo = monkeys.iter().map(|m| m.test.divisor).product::<usize>();
-
-    for _round in 1..=10000 {
-        for i in 0..monkeys.len() {
-            let items = std::mem::take(&mut monkeys[i].starting_items);
-            let operation = monkeys[i].operation;
-            let test = monkeys[i].test;
-
-            let count = inspect_count.entry(i).or_insert(0usize);
-            *count += items.len();
-
-            for item in items {
-                let worry_level = calculate_worry_level(&operation, item) % modulo;
-                let monkey_index = if worry_level % test.divisor == 0 {
-                    test.throw_if_true
-                } else {
-                    test.throw_if_false
-                };
-                monkeys[monkey_index].starting_items.push(worry_level);
-            }
-        }
-    }
-
-    let mut counts = inspect_count
-        .iter()
-        .map(|(_, &count)| count)
-        .collect::<Vec<_>>();
-    counts.sort();
-    counts.iter().rev().take(2).product()
+    solve(&mut monkeys, 10000, &|v| v % modulo)
 }
 
 #[cfg(test)]
