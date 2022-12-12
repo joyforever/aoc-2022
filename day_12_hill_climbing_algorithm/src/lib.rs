@@ -83,8 +83,9 @@ impl Grid {
 }
 
 #[allow(dead_code)]
-fn print_graph(graph: DiGraphMap<Node, ()>) {
-    println!("{:?}", Dot::with_config(&graph, &[Config::EdgeNoLabel]));
+fn print_graph(graph: &DiGraphMap<Node, ()>) {
+    // see graph on: http://viz-js.com/
+    println!("{:?}", Dot::with_config(graph, &[Config::EdgeNoLabel]));
 }
 
 pub fn part_one(input: &str) -> usize {
@@ -94,6 +95,7 @@ pub fn part_one(input: &str) -> usize {
 
     let edges = grid.to_edges();
     let graph = DiGraphMap::<(usize, usize, char), ()>::from_edges(&edges);
+    //print_graph(&graph);
 
     let res = dijkstra(&graph, start, None, |_| 1usize);
     *res.get(&end).unwrap()
