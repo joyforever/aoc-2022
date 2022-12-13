@@ -58,15 +58,15 @@ impl std::fmt::Display for Packet {
     }
 }
 
-fn is_ordered(first: &Packet, second: &Packet) -> Option<bool> {
+fn is_ordered(first: &Packet, second: &Packet) -> Ordering {
     match (&first, &second) {
         (&Packet::Number(v1), &Packet::Number(v2)) => {
             if *v1 < *v2 {
-                Some(true)
+                Ordering::Less
             } else if *v1 > *v2 {
-                Some(false)
+                Ordering::Greater
             } else {
-                None
+                Ordering::Equal
             }
         }
         (&Packet::Number(v), &Packet::List(..)) => {
@@ -81,16 +81,17 @@ fn is_ordered(first: &Packet, second: &Packet) -> Option<bool> {
             let v1_len = v1.len();
             let v2_len = v2.len();
             for i in 0..v1_len.min(v2_len) {
-                if let Some(o) = is_ordered(&v1[i], &v2[i]) {
-                    return Some(o);
+                let ordering = is_ordered(&v1[i], &v2[i]);
+                if !ordering.is_eq() {
+                    return ordering;
                 }
             }
             if v1_len < v2_len {
-                return Some(true);
+                return Ordering::Less;
             } else if v1_len > v2_len {
-                return Some(false);
+                return Ordering::Greater;
             }
-            None
+            Ordering::Equal
         }
     }
 }
@@ -111,12 +112,8 @@ pub fn part_one(input: &str) -> usize {
             //println!("left:  {left}");
             let right = Packet::from(right.as_str());
             //println!("right: {right}");
-            if let Some(ordered) = is_ordered(&left, &right) {
-                if ordered {
-                    Some(index + 1)
-                } else {
-                    None
-                }
+            if is_ordered(&left, &right).is_lt() {
+                Some(index + 1)
             } else {
                 None
             }
@@ -145,15 +142,7 @@ pub fn part_two(input: &str) -> usize {
     packets.sort_by(|first, second| {
         let first = Packet::from(first.as_str());
         let second = Packet::from(second.as_str());
-        if let Some(o) = is_ordered(&first, &second) {
-            if o {
-                Ordering::Less
-            } else {
-                Ordering::Greater
-            }
-        } else {
-            Ordering::Equal
-        }
+        is_ordered(&first, &second)
     });
 
     let mut indices = [0; 2];
