@@ -4,7 +4,7 @@ enum Packet {
     List(Vec<Packet>),
 }
 
-fn parse_packets(s: &[char]) -> Vec<Vec<Packet>> {
+fn parse_packets(s: &[char]) -> Packet {
     let mut lists = vec![vec![]];
 
     for &c in s {
@@ -25,7 +25,7 @@ fn parse_packets(s: &[char]) -> Vec<Vec<Packet>> {
         }
     }
 
-    lists
+    Packet::List(std::mem::take(&mut lists[0]))
 }
 
 fn is_ordered(first: &Packet, second: &Packet) -> Option<bool> {
@@ -76,19 +76,24 @@ pub fn part_one(input: &str) -> usize {
             (left.chars().collect::<Vec<_>>(), right.chars().collect::<Vec<_>>())
         })
         .collect::<Vec<_>>();
-
-    for (index, (left, right)) in pairs.iter().enumerate() {
-        println!("{left:?}");
-        let left_packets = parse_packets(&left);
-        println!("{:?}", left_packets);
-
-        println!("{right:?}");
-        let right_packets = parse_packets(&right);
-
-        //println!("{index} is orderd: {:?}", is_ordered(&Packet::List(left_packets[0]), &Packet::List(right_packets[0])));
-    }
-
-    13
+    
+    pairs
+        .iter()
+        .enumerate()
+        .filter_map(|(index, (left, right))| {
+            let left = parse_packets(left);
+            let right = parse_packets(right);
+            if let Some(ordered) = is_ordered(&left, &right) {
+                if ordered {
+                    Some(index + 1)
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        })
+        .sum()
 }
 
 #[cfg(test)]
