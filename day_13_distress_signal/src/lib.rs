@@ -6,28 +6,55 @@ enum Packet {
     List(Vec<Packet>),
 }
 
-fn parse_packets(s: &[u8]) -> Packet {
-    let mut lists = vec![vec![]];
+impl From<&str> for Packet {
+    fn from(s: &str) -> Self {
+        let mut lists = vec![vec![]];
 
-    for &c in s {
-        match c {
-            b'[' => {
-                lists.push(vec![]);
-            }
-            b']' => {
-                let list = lists.pop().unwrap();
-                lists.last_mut().unwrap().push(Packet::List(list));
-            }
-            b',' => {
-                // do nothing
-            }
-            n => {
-                lists.last_mut().unwrap().push(Packet::Number(n as char));
+        for c in s.chars() {
+            match c {
+                '[' => {
+                    lists.push(vec![]);
+                }
+                ']' => {
+                    let list = lists.pop().unwrap();
+                    lists.last_mut().unwrap().push(Packet::List(list));
+                }
+                ',' => {
+                    // do nothing, just skip
+                }
+                n => {
+                    lists.last_mut().unwrap().push(Packet::Number(n as char));
+                }
             }
         }
-    }
 
-    Packet::List(std::mem::take(&mut lists[0]))
+        Packet::List(std::mem::take(&mut lists[0]))
+    }
+}
+
+impl std::fmt::Display for Packet {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self {
+            &Packet::Number(n) => {
+                if *n == 'A' {
+                    write!(f, "10")?;
+                } else {
+                    write!(f, "{n}")?;
+                }
+            },
+            &Packet::List(v) => {
+                write!(f, "[")?;
+                for (i, p) in v.iter().enumerate() {
+                    if i != 0 {
+                        write!(f, ",")?;
+                    }
+                    p.fmt(f)?;
+                }
+                write!(f, "]")?;
+             }
+        }
+        Ok(())
+    }
 }
 
 fn is_ordered(first: &Packet, second: &Packet) -> Option<bool> {
@@ -79,8 +106,8 @@ pub fn part_one(input: &str) -> usize {
         .iter()
         .enumerate()
         .filter_map(|(index, (left, right))| {
-            let left = parse_packets(left.as_bytes());
-            let right = parse_packets(right.as_bytes());
+            let left = Packet::from(left.as_str());
+            let right = Packet::from(right.as_str());
             if let Some(ordered) = is_ordered(&left, &right) {
                 if ordered {
                     Some(index + 1)
@@ -113,8 +140,8 @@ pub fn part_two(input: &str) -> usize {
     }
 
     packets.sort_by(|first, second| {
-        let first = parse_packets(first.as_bytes());
-        let second = parse_packets(second.as_bytes());
+        let first = Packet::from(first.as_str());
+        let second = Packet::from(second.as_str());
         if let Some(o) = is_ordered(&first, &second) {
             if o {
                 Ordering::Less
