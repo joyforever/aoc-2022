@@ -1,6 +1,6 @@
 use std::cmp::Ordering;
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialOrd)]
 enum Packet {
     Number(char),
     List(Vec<Packet>),
@@ -58,40 +58,32 @@ impl std::fmt::Display for Packet {
     }
 }
 
-fn is_ordered(first: &Packet, second: &Packet) -> Ordering {
-    match (&first, &second) {
-        (&Packet::Number(v1), &Packet::Number(v2)) => {
-            if *v1 < *v2 {
-                Ordering::Less
-            } else if *v1 > *v2 {
-                Ordering::Greater
-            } else {
-                Ordering::Equal
-            }
+impl PartialEq for Packet {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::Number(a), Self::Number(b)) => a == b,
+            (Self::List(a), Self::List(b)) => a == b,
+            (Self::Number(a), Self::List(b)) => {
+                &vec![Packet::Number(*a)] == b
+            },
+            (Self::List(a), Self::Number(b)) => {
+                a == &vec![Packet::Number(*b)]
+            },
         }
-        (&Packet::Number(v), &Packet::List(..)) => {
-            let list = Packet::List(vec![Packet::Number(*v)]);
-            is_ordered(&list, second)
-        }
-        (&Packet::List(..), &Packet::Number(v)) => {
-            let list = Packet::List(vec![Packet::Number(*v)]);
-            is_ordered(first, &list)
-        }
-        (&Packet::List(v1), &Packet::List(v2)) => {
-            let v1_len = v1.len();
-            let v2_len = v2.len();
-            for i in 0..v1_len.min(v2_len) {
-                let ordering = is_ordered(&v1[i], &v2[i]);
-                if !ordering.is_eq() {
-                    return ordering;
-                }
-            }
-            if v1_len < v2_len {
-                return Ordering::Less;
-            } else if v1_len > v2_len {
-                return Ordering::Greater;
-            }
-            Ordering::Equal
+    }
+}
+
+impl Ord for Packet {
+    fn cmp(&self, other: &Self) -> Ordering {
+        match (self, other) {
+            (Packet::Number(a), Packet::Number(b)) =>  a.cmp(b),
+            (Packet::List(a), Packet::List(b)) => a.cmp(b),
+            (Packet::List(a), Packet::Number(b)) => {
+                a.cmp(&vec![Packet::Number(*b)])
+            },
+            (Packet::Number(a), Packet::List(b)) => {
+                vec![Packet::Number(*a)].cmp(&b)
+            },
         }
     }
 }
@@ -109,10 +101,8 @@ pub fn part_one(input: &str) -> usize {
         .enumerate()
         .filter_map(|(index, (left, right))| {
             let left = Packet::from(left.as_str());
-            //println!("left:  {left}");
             let right = Packet::from(right.as_str());
-            //println!("right: {right}");
-            if is_ordered(&left, &right).is_lt() {
+            if left.cmp(&right).is_lt() {
                 Some(index + 1)
             } else {
                 None
@@ -142,7 +132,7 @@ pub fn part_two(input: &str) -> usize {
     packets.sort_by(|first, second| {
         let first = Packet::from(first.as_str());
         let second = Packet::from(second.as_str());
-        is_ordered(&first, &second)
+        first.cmp(&second)
     });
 
     let mut indices = [0; 2];
