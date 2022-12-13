@@ -28,6 +28,43 @@ fn parse_packets(s: &[char]) -> Vec<Vec<Packet>> {
     lists
 }
 
+fn is_ordered(first: &Packet, second: &Packet) -> Option<bool> {
+    match (&first, &second) {
+        (&Packet::Number(v1), &Packet::Number(v2)) => {
+            if *v1 < *v2 {
+                Some(true)
+            } else if *v1 > *v2 {
+                Some(false)
+            } else {
+                None
+            }
+        },
+        (&Packet::Number(v), &Packet::List(..)) => {
+            let list = Packet::List(vec![Packet::Number(*v)]);
+            is_ordered(&list, second)
+        },
+        (&Packet::List(..), &Packet::Number(v)) => {
+            let list = Packet::List(vec![Packet::Number(*v)]);
+            is_ordered(first, &list)
+        },
+        (&Packet::List(v1), &Packet::List(v2)) => {
+            let v1_len = v1.len();
+            let v2_len = v2.len();
+            for i in 0..v1_len.min(v2_len) {
+                if let Some(o) = is_ordered(&v1[i], &v2[i]) {
+                    return Some(o);
+                }
+            }
+            if v1_len < v2_len {
+                return Some(true);
+            } else if v1_len > v2_len {
+                return Some(false);
+            }
+            None
+        }
+    }
+}
+
 pub fn part_one(input: &str) -> usize {
     let pairs = input
         .trim()
@@ -40,15 +77,15 @@ pub fn part_one(input: &str) -> usize {
         })
         .collect::<Vec<_>>();
 
-    for (left, right) in &pairs {
+    for (index, (left, right)) in pairs.iter().enumerate() {
         println!("{left:?}");
         let left_packets = parse_packets(&left);
         println!("{:?}", left_packets);
 
         println!("{right:?}");
-        parse_packets(&right);
+        let right_packets = parse_packets(&right);
 
-        println!();
+        //println!("{index} is orderd: {:?}", is_ordered(&Packet::List(left_packets[0]), &Packet::List(right_packets[0])));
     }
 
     13
