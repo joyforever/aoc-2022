@@ -10,6 +10,7 @@ impl From<&str> for Packet {
     fn from(s: &str) -> Self {
         let mut lists = vec![vec![]];
 
+        let s = &s[1..s.len()-1];
         for c in s.chars() {
             match c {
                 '[' => {
@@ -107,7 +108,9 @@ pub fn part_one(input: &str) -> usize {
         .enumerate()
         .filter_map(|(index, (left, right))| {
             let left = Packet::from(left.as_str());
+            //println!("left:  {left}");
             let right = Packet::from(right.as_str());
+            //println!("right: {right}");
             if let Some(ordered) = is_ordered(&left, &right) {
                 if ordered {
                     Some(index + 1)
