@@ -2,12 +2,12 @@ pub fn part_one(input: &str) -> usize {
     let paths = input
         .trim()
         .lines()
-        .map(|line| line
-            .split(" -> ")
-            .map(|s| s.split_once(',').unwrap())
-            .map(|(x, y)| (x.parse::<u32>().unwrap(), y.parse::<u32>().unwrap()))
-            .collect::<Vec<_>>()
-        )
+        .map(|line| {
+            line.split(" -> ")
+                .map(|s| s.split_once(',').unwrap())
+                .map(|(x, y)| (x.parse::<u32>().unwrap(), y.parse::<u32>().unwrap()))
+                .collect::<Vec<_>>()
+        })
         .collect::<Vec<_>>();
     println!("{paths:?}");
     0
