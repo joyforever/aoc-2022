@@ -26,6 +26,31 @@ struct Cave {
 }
 
 impl Cave {
+    fn new(paths: &Vec<Vec<(i32, i32)>>) -> Self {
+        let mut cave = Cave::default();
+        cave.add_source(500, 0);
+        for path in paths {
+            path.windows(2).for_each(|coords| {
+                let (sx, sy) = coords[0];
+                let (ex, ey) = coords[1];
+                if sx == ex {
+                    let min = sy.min(ey);
+                    let max = sy.max(ey);
+                    for y in min..=max {
+                        cave.add_rock(sx, y);
+                    }
+                } else {
+                    let min = sx.min(ex);
+                    let max = sx.max(ex);
+                    for x in min..=max {
+                        cave.add_rock(x, sy);
+                    }
+                }
+            });
+        }
+        cave
+    }
+
     fn add_source(&mut self, x: i32, y: i32) {
         self.source = (x, y);
         self.min_x = x;
@@ -128,8 +153,8 @@ impl std::fmt::Display for Cave {
     }
 }
 
-pub fn part_one(input: &str) -> usize {
-    let paths = input
+fn parse_paths(input: &str) -> Vec<Vec<(i32, i32)>> {
+    input
         .trim()
         .lines()
         .map(|line| {
@@ -138,28 +163,30 @@ pub fn part_one(input: &str) -> usize {
                 .map(|(x, y)| (x.parse::<i32>().unwrap(), y.parse::<i32>().unwrap()))
                 .collect::<Vec<_>>()
         })
-        .collect::<Vec<_>>();
+        .collect::<Vec<_>>()
+}
 
-    let mut cave = Cave::default();
-    cave.add_source(500, 0);
-    for path in &paths {
-        path.windows(2).for_each(|coords| {
-            let (sx, sy) = coords[0];
-            let (ex, ey) = coords[1];
-            if sx == ex {
-                let min = sy.min(ey);
-                let max = sy.max(ey);
-                for y in min..=max {
-                    cave.add_rock(sx, y);
-                }
-            } else {
-                let min = sx.min(ex);
-                let max = sx.max(ex);
-                for x in min..=max {
-                    cave.add_rock(x, sy);
-                }
-            }
-        });
+pub fn part_one(input: &str) -> usize {
+    let paths = parse_paths(input);
+
+    let mut cave = Cave::new(&paths);
+
+    //println!("{cave}\n");
+    let mut count = 0;
+    while cave.fall_sand() {
+        count += 1;
+        //println!("{cave}\n");
+    }
+    count
+}
+
+pub fn part_two(input: &str) -> usize {
+    let paths = parse_paths(input);
+
+    let mut cave = Cave::new(&paths);
+    let y = cave.max_y + 2;
+    for x in 500-y..=500+y {
+        cave.add_rock(x, y);
     }
 
     //println!("{cave}\n");
@@ -168,7 +195,6 @@ pub fn part_one(input: &str) -> usize {
         count += 1;
         //println!("{cave}\n");
     }
-
     count
 }
 
@@ -181,5 +207,10 @@ mod tests {
     #[test]
     fn part_one_works() {
         assert_eq!(part_one(EXAMPLE), 24);
+    }
+
+    #[test]
+    fn part_two_works() {
+        assert_eq!(part_two(EXAMPLE), 93);
     }
 }
