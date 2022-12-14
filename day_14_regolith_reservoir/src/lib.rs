@@ -1,31 +1,103 @@
-use std::collections::HashSet;
+use std::collections::HashMap;
+
+enum Unit {
+    Source,
+    Rock,
+    Sand,
+}
+
+impl std::fmt::Display for Unit {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            &Unit::Source => write!(f, "+")?,
+            &Unit::Rock => write!(f, "#")?,
+            &Unit::Sand => write!(f, "o")?,
+        }
+        Ok(())
+    }
+}
 
 #[derive(Default)]
 struct Cave {
-    rocks: HashSet<(usize, usize)>,
-    min_x: usize,
-    max_x: usize,
-    min_y: usize,
-    max_y: usize,
-    source: (usize, usize),
+    units: HashMap<(i32, i32), Unit>,
+    min_x: i32,
+    max_x: i32,
+    min_y: i32,
+    max_y: i32,
+    source: (i32, i32),
 }
 
 impl Cave {
-    fn set_source(&mut self, x: usize, y: usize) {
+    fn add_source(&mut self, x: i32, y: i32) {
         self.source = (x, y);
         self.min_x = x;
         self.max_x = x;
         self.min_y = y;
         self.max_y = y;
-        self.add_rock(x, y);
+        self.units.insert((x, y), Unit::Source);
     }
 
-    fn add_rock(&mut self, x: usize, y: usize) {
+    fn add_rock(&mut self, x: i32, y: i32) {
         self.min_x = self.min_x.min(x);
         self.max_x = self.max_x.max(x);
         self.min_y = self.min_y.min(y);
         self.max_y = self.max_y.max(y);
-        self.rocks.insert((x, y));
+        self.units.insert((x, y), Unit::Rock);
+    }
+
+    fn is_out(&self, x: i32, y: i32) -> bool {
+        x < self.min_x || x > self.max_x || y < self.min_y || y > self.max_y
+    }
+
+    fn is_air(&self, x: i32, y: i32) -> bool {
+        self.units.get(&(x, y)).is_none()
+    }
+
+    fn add_sand(&mut self, x: i32, y: i32) {
+        self.min_x = self.min_x.min(x);
+        self.max_x = self.max_x.max(x);
+        self.min_y = self.min_y.min(y);
+        self.max_y = self.max_y.max(y);
+        self.units.insert((x, y), Unit::Sand);
+    }
+
+    fn fall_sand(&mut self) -> bool {
+        let mut x = self.source.0;
+        let mut y = self.source.1;
+
+        loop {
+            // down
+            if self.is_out(x, y + 1) {
+                return false;
+            }
+            if self.is_air(x, y + 1) {
+                y += 1;
+                continue;
+            }
+
+            // left down
+            if self.is_out(x - 1, y + 1) {
+                return false;
+            }
+            if self.is_air(x - 1, y + 1) {
+                x -= 1;
+                y += 1;
+                continue;
+            }
+
+            // right down
+            if self.is_out(x + 1, y + 1) {
+                return false;
+            }
+            if self.is_air(x + 1, y + 1) {
+                x += 1;
+                y += 1;
+                continue;
+            }
+
+            self.add_sand(x, y);
+            return true;
+        }
     }
 }
 
@@ -36,10 +108,14 @@ impl std::fmt::Display for Cave {
                 if x == self.source.0 && y == self.source.1 {
                     write!(f, "+")?;
                 } else {
-                    if self.rocks.get(&(x, y)).is_none() {
-                        write!(f, ".")?;
+                    if let Some(unit) = self.units.get(&(x, y)) {
+                        match unit {
+                            &Unit::Source => write!(f, "+")?,
+                            &Unit::Rock => write!(f, "#")?,
+                            &Unit::Sand => write!(f, "o")?,
+                        }
                     } else {
-                        write!(f, "#")?;
+                        write!(f, ".")?;
                     }
                 }
             }
@@ -56,37 +132,44 @@ pub fn part_one(input: &str) -> usize {
         .map(|line| {
             line.split(" -> ")
                 .map(|s| s.split_once(',').unwrap())
-                .map(|(x, y)| (x.parse::<usize>().unwrap(), y.parse::<usize>().unwrap()))
+                .map(|(x, y)| (x.parse::<i32>().unwrap(), y.parse::<i32>().unwrap()))
                 .collect::<Vec<_>>()
         })
         .collect::<Vec<_>>();
-    
+
     let mut cave = Cave::default();
-    cave.set_source(500, 0);
+    cave.add_source(500, 0);
     for path in &paths {
-        path
-            .windows(2)
-            .for_each(|coords| {
-                let (sx, sy) = coords[0];
-                let (ex, ey) = coords[1];
-                if sx == ex {
-                    let min = sy.min(ey);
-                    let max = sy.max(ey);
-                    for y in min..=max {
-                        cave.add_rock(sx, y);
-                    }
-                } else /* sy == ey */ {
-                    let min = sx.min(ex);
-                    let max = sx.max(ex);
-                    for x in min..=max {
-                        cave.add_rock(x, sy);
-                    }
+        path.windows(2).for_each(|coords| {
+            let (sx, sy) = coords[0];
+            let (ex, ey) = coords[1];
+            if sx == ex {
+                let min = sy.min(ey);
+                let max = sy.max(ey);
+                for y in min..=max {
+                    cave.add_rock(sx, y);
                 }
-            });
+            } else
+            /* sy == ey */
+            {
+                let min = sx.min(ex);
+                let max = sx.max(ex);
+                for x in min..=max {
+                    cave.add_rock(x, sy);
+                }
+            }
+        });
     }
 
-    println!("{cave}");
-    0
+    //println!("{cave}");
+
+    let mut count = 0;
+    while cave.fall_sand() {
+        count += 1;
+        //println!("\n{cave}\n");
+    }
+
+    count
 }
 
 #[cfg(test)]
@@ -97,6 +180,6 @@ mod tests {
 
     #[test]
     fn part_one_works() {
-        assert_eq!(part_one(EXAMPLE), 0);
+        assert_eq!(part_one(EXAMPLE), 24);
     }
 }
