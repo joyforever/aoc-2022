@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 enum Unit {
-    Source,
     Rock,
     Sand,
 }
@@ -9,7 +8,6 @@ enum Unit {
 impl std::fmt::Display for Unit {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            &Unit::Source => write!(f, "+")?,
             &Unit::Rock => write!(f, "#")?,
             &Unit::Sand => write!(f, "o")?,
         }
@@ -34,7 +32,6 @@ impl Cave {
         self.max_x = x;
         self.min_y = y;
         self.max_y = y;
-        self.units.insert((x, y), Unit::Source);
     }
 
     fn add_rock(&mut self, x: i32, y: i32) {
@@ -95,6 +92,11 @@ impl Cave {
                 continue;
             }
 
+            if (x, y) == self.source {
+                if !self.is_air(x, y) {
+                    return false;
+                }
+            }
             self.add_sand(x, y);
             return true;
         }
@@ -108,9 +110,10 @@ impl std::fmt::Display for Cave {
                 if x == self.source.0 && y == self.source.1 {
                     write!(f, "+")?;
                 } else {
-                    if let Some(unit) = self.units.get(&(x, y)) {
+                    if x == self.source.0 && y == self.source.1 {
+                        write!(f, "+")?;
+                    } else if let Some(unit) = self.units.get(&(x, y)) {
                         match unit {
-                            &Unit::Source => write!(f, "+")?,
                             &Unit::Rock => write!(f, "#")?,
                             &Unit::Sand => write!(f, "o")?,
                         }
@@ -149,9 +152,7 @@ pub fn part_one(input: &str) -> usize {
                 for y in min..=max {
                     cave.add_rock(sx, y);
                 }
-            } else
-            /* sy == ey */
-            {
+            } else {
                 let min = sx.min(ex);
                 let max = sx.max(ex);
                 for x in min..=max {
@@ -161,12 +162,11 @@ pub fn part_one(input: &str) -> usize {
         });
     }
 
-    //println!("{cave}");
-
+    //println!("{cave}\n");
     let mut count = 0;
     while cave.fall_sand() {
         count += 1;
-        //println!("\n{cave}\n");
+        //println!("{cave}\n");
     }
 
     count
