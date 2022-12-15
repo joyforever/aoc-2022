@@ -21,7 +21,7 @@ pub fn part_one(input: &str, line: i32) -> usize {
         })
         .collect::<Vec<_>>();
 
-    let mut map = HashMap::new();    
+    let mut map = HashMap::new();
     for (sensor, beacon) in &pairs {
         map.insert(*sensor, 'S');
         map.insert(*beacon, 'B');
@@ -52,7 +52,11 @@ pub fn part_one(input: &str, line: i32) -> usize {
     set.len()
 }
 
-pub fn part_two(input: &str, max: i32) -> usize {
+fn distance(a: &(i32, i32), b: &(i32, i32)) -> i32 {
+    (a.0 - b.0).abs() + (a.1 - b.1).abs()
+}
+
+pub fn part_two(input: &str, max: i32) -> i32 {
     let pairs = input
         .trim()
         .lines()
@@ -63,15 +67,39 @@ pub fn part_two(input: &str, max: i32) -> usize {
             (sensor, beacon)
         })
         .collect::<Vec<_>>();
-    
-    let beacon = pairs
-        .iter()
-        .map(|(_, beacon)| beacon)
-        .find(|beacon| {
-            beacon.0 < max && beacon.1 < max
-        })
-        .unwrap();
-    println!("{:?}", beacon);
+
+    let is_ok = |x: i32, y: i32| {
+        x >= 0
+            && x <= max
+            && y >= 0
+            && y <= max
+            && pairs
+                .iter()
+                .all(|(s, b)| distance(s, &(x, y)) > distance(s, b))
+    };
+
+    for i in 1.. {
+        for (_sensor, beacon) in &pairs {
+            // left && right
+            for x in [beacon.0 - i, beacon.1 + i] {
+                for y in beacon.1 - i..=beacon.1 + i {
+                    if is_ok(x, y) {
+                        println!("{x}, {y}");
+                        return x * 4000000 + y;
+                    }
+                }
+            }
+            // up && down
+            for y in [beacon.1 - i, beacon.1 + i] {
+                for x in beacon.0 - i + 1..beacon.0 + i {
+                    if is_ok(x, y) {
+                        println!("{x}, {y}");
+                        return x * 4000000 + y;
+                    }
+                }
+            }
+        }
+    }
 
     0
 }
@@ -89,6 +117,6 @@ mod tests {
 
     #[test]
     fn part_two_works() {
-        assert_eq!(part_two(EXAMPLE, 20), 0);
+        assert_eq!(part_two(EXAMPLE, 20), 56000011);
     }
 }
