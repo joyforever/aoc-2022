@@ -52,6 +52,30 @@ pub fn part_one(input: &str, line: i32) -> usize {
     set.len()
 }
 
+pub fn part_two(input: &str, max: i32) -> usize {
+    let pairs = input
+        .trim()
+        .lines()
+        .map(|line| {
+            let (s1, s2) = line.split_once(": ").unwrap();
+            let sensor = parse_position("Sensor at ", s1);
+            let beacon = parse_position("closest beacon is at ", s2);
+            (sensor, beacon)
+        })
+        .collect::<Vec<_>>();
+    
+    let beacon = pairs
+        .iter()
+        .map(|(_, beacon)| beacon)
+        .find(|beacon| {
+            beacon.0 < max && beacon.1 < max
+        })
+        .unwrap();
+    println!("{:?}", beacon);
+
+    0
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -61,5 +85,10 @@ mod tests {
     #[test]
     fn part_one_works() {
         assert_eq!(part_one(EXAMPLE, 10), 26);
+    }
+
+    #[test]
+    fn part_two_works() {
+        assert_eq!(part_two(EXAMPLE, 20), 0);
     }
 }
