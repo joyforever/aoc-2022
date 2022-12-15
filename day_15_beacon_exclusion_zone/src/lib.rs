@@ -9,6 +9,10 @@ fn parse_position(tag: &str, s: &str) -> (i64, i64) {
     (x, y)
 }
 
+fn distance(a: &(i64, i64), b: &(i64, i64)) -> i64 {
+    (a.0 - b.0).abs() + (a.1 - b.1).abs()
+}
+
 pub fn part_one(input: &str, line: i64) -> usize {
     let pairs = input
         .trim()
@@ -30,15 +34,15 @@ pub fn part_one(input: &str, line: i64) -> usize {
     let mut set = HashSet::new();
 
     for (sensor, beacon) in &pairs {
-        let n = sensor.0.abs_diff(beacon.0) as i64 + sensor.1.abs_diff(beacon.1) as i64;
+        let dis = distance(sensor, beacon);
         //println!("n = {n}");
-        for i in -n..=n {
+        for i in -dis..=dis {
             let y = sensor.1 + i;
             if y != line {
                 continue;
             }
 
-            let m = n - i.abs();
+            let m = dis - i.abs();
             for j in -m..=m {
                 let x = sensor.0 + j;
                 //println!("({i},{j}) = ({x}, {y})");
@@ -50,10 +54,6 @@ pub fn part_one(input: &str, line: i64) -> usize {
     }
 
     set.len()
-}
-
-fn distance(a: &(i64, i64), b: &(i64, i64)) -> i64 {
-    (a.0 - b.0).abs() + (a.1 - b.1).abs()
 }
 
 pub fn part_two(input: &str, max: i64) -> i64 {
