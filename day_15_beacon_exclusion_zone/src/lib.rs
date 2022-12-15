@@ -23,27 +23,26 @@ pub fn part_one(input: &str) -> usize {
 
     let mut map = HashMap::new();    
     for (sensor, beacon) in &pairs {
-        map.insert(sensor, 'S');
-        map.insert(beacon, 'B');
+        map.insert(*sensor, 'S');
+        map.insert(*beacon, 'B');
     }
 
     let mut set = HashSet::new();
 
     for (sensor, beacon) in &pairs {
         let n = sensor.0.abs_diff(beacon.0) as i32 + sensor.1.abs_diff(beacon.1) as i32;
+        //println!("n = {n}");
         for i in -n..=n {
-            for j in -(n-i)..=n-i {
+            let m = n - i.abs();
+            for j in -m..=m {
                 let x = sensor.0 + i;
                 let y = sensor.1 + j;
-                if y == 10 {
+                //println!("({i},{j}) = ({x}, {y})");
+                if y == 10 && map.get(&(x, y)).is_none() {
                     set.insert((x, y));
                 }
             }
         }
-    }
-
-    for s in &set {
-        println!("{s:?}");
     }
 
     set.len()
