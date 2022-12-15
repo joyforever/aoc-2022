@@ -9,7 +9,7 @@ fn parse_position(tag: &str, s: &str) -> (i32, i32) {
     (x, y)
 }
 
-pub fn part_one(input: &str) -> usize {
+pub fn part_one(input: &str, line: i32) -> usize {
     let pairs = input
         .trim()
         .lines()
@@ -33,12 +33,16 @@ pub fn part_one(input: &str) -> usize {
         let n = sensor.0.abs_diff(beacon.0) as i32 + sensor.1.abs_diff(beacon.1) as i32;
         //println!("n = {n}");
         for i in -n..=n {
+            let y = sensor.1 + i;
+            if y != line {
+                continue;
+            }
+
             let m = n - i.abs();
             for j in -m..=m {
-                let x = sensor.0 + i;
-                let y = sensor.1 + j;
+                let x = sensor.0 + j;
                 //println!("({i},{j}) = ({x}, {y})");
-                if y == 10 && map.get(&(x, y)).is_none() {
+                if map.get(&(x, y)).is_none() {
                     set.insert((x, y));
                 }
             }
@@ -56,6 +60,6 @@ mod tests {
 
     #[test]
     fn part_one_works() {
-        assert_eq!(part_one(EXAMPLE), 26);
+        assert_eq!(part_one(EXAMPLE, 10), 26);
     }
 }
