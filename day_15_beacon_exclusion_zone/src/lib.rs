@@ -1,15 +1,15 @@
 use std::collections::{HashMap, HashSet};
 
-fn parse_position(tag: &str, s: &str) -> (i32, i32) {
+fn parse_position(tag: &str, s: &str) -> (i64, i64) {
     let n = tag.len();
     let s = &s[n..];
     let (x, y) = s.split_once(", ").unwrap();
-    let x = x[2..].parse::<i32>().unwrap();
-    let y = y[2..].parse::<i32>().unwrap();
+    let x = x[2..].parse::<i64>().unwrap();
+    let y = y[2..].parse::<i64>().unwrap();
     (x, y)
 }
 
-pub fn part_one(input: &str, line: i32) -> usize {
+pub fn part_one(input: &str, line: i64) -> usize {
     let pairs = input
         .trim()
         .lines()
@@ -30,7 +30,7 @@ pub fn part_one(input: &str, line: i32) -> usize {
     let mut set = HashSet::new();
 
     for (sensor, beacon) in &pairs {
-        let n = sensor.0.abs_diff(beacon.0) as i32 + sensor.1.abs_diff(beacon.1) as i32;
+        let n = sensor.0.abs_diff(beacon.0) as i64 + sensor.1.abs_diff(beacon.1) as i64;
         //println!("n = {n}");
         for i in -n..=n {
             let y = sensor.1 + i;
@@ -52,11 +52,11 @@ pub fn part_one(input: &str, line: i32) -> usize {
     set.len()
 }
 
-fn distance(a: &(i32, i32), b: &(i32, i32)) -> i32 {
+fn distance(a: &(i64, i64), b: &(i64, i64)) -> i64 {
     (a.0 - b.0).abs() + (a.1 - b.1).abs()
 }
 
-pub fn part_two(input: &str, max: i32) -> i32 {
+pub fn part_two(input: &str, max: i64) -> i64 {
     let pairs = input
         .trim()
         .lines()
@@ -68,7 +68,7 @@ pub fn part_two(input: &str, max: i32) -> i32 {
         })
         .collect::<Vec<_>>();
 
-    let is_ok = |x: i32, y: i32| {
+    let is_ok = |x: i64, y: i64| {
         x >= 0
             && x <= max
             && y >= 0
@@ -79,21 +79,15 @@ pub fn part_two(input: &str, max: i32) -> i32 {
     };
 
     for i in 1.. {
-        for (_sensor, beacon) in &pairs {
-            // left && right
-            for x in [beacon.0 - i, beacon.1 + i] {
-                for y in beacon.1 - i..=beacon.1 + i {
+        for (s, b) in &pairs {
+            let dis = distance(s, b) + i;
+            for dx in -dis..=dis {
+                let dy = dis - dx.abs();
+                for dy in [dy, -dy] {
+                    let x = s.0 + dx;
+                    let y = s.1 + dy;
                     if is_ok(x, y) {
-                        println!("{x}, {y}");
-                        return x * 4000000 + y;
-                    }
-                }
-            }
-            // up && down
-            for y in [beacon.1 - i, beacon.1 + i] {
-                for x in beacon.0 - i + 1..beacon.0 + i {
-                    if is_ok(x, y) {
-                        println!("{x}, {y}");
+                        println!("{x} {y}");
                         return x * 4000000 + y;
                     }
                 }
